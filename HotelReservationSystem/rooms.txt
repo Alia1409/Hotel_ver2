@@ -1,0 +1,4 @@
+101,single,1,80.0,available,Street View
+102,double,1,120.0,available,Courtyard View
+201,suite,2,250.0,available,Ocean View Balcony
+103,suit,1,145.0,available,Beach View

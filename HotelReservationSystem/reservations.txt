@@ -1,0 +1,1 @@
+RES-001,101,LILO,hjgh@gam.com,1234567,2026-05-23,2026-05-27,320.0,confirmed,NONE

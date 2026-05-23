@@ -1,0 +1,26 @@
+[
+  {
+    "roomNumber": "101",
+    "type": "single",
+    "floor": 1,
+    "pricePerNight": 80.0,
+    "status": "available",
+    "description": "Street View"
+  },
+  {
+    "roomNumber": "102",
+    "type": "double",
+    "floor": 1,
+    "pricePerNight": 120.0,
+    "status": "available",
+    "description": "Courtyard View"
+  },
+  {
+    "roomNumber": "201",
+    "type": "suite",
+    "floor": 2,
+    "pricePerNight": 250.0,
+    "status": "available",
+    "description": "Ocean View Balcony"
+  }
+]
