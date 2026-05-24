@@ -18,13 +18,20 @@ import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import java.time.LocalDate;
 
+/**
+ * Main application class for the Boutique Hotel Reservation System.
+ * Handles the JavaFX user interface, routing user actions to the appropriate services.
+ */
 public class MainApp extends Application {
+    // Services for handling business logic
     private RoomService roomService = new RoomService();
     private ReservationService resService = new ReservationService(roomService);
 
+    // Observable lists to automatically update the UI when data changes
     private ObservableList<Room> observableRooms;
     private ObservableList<Reservation> observableReservations;
     
+    // State variables to track currently selected items in the tables
     private String selectedReservationId = null;
     private String selectedRoomNumber = null;
 
@@ -36,26 +43,35 @@ public class MainApp extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Boutique Hotel Reservation System (Full CRUD)");
 
+        // Initialize observable lists with current database/service data
         observableRooms = FXCollections.observableArrayList(roomService.getAllRooms());
         observableReservations = FXCollections.observableArrayList(resService.getAllReservations());
 
+        // Setup the main layout using a TabPane for navigation
         TabPane tabPane = new TabPane();
         Tab tab1 = new Tab("Daily Occupancy Panel", buildOccupancyView());
         Tab tab2 = new Tab("Reservation Manager (CRUD)", buildReservationView());
         Tab tab3 = new Tab("Room Management (CRUD)", buildRoomView());
 
+        // Prevent users from accidentally closing the core tabs
         tab1.setClosable(false); tab2.setClosable(false); tab3.setClosable(false);
         tabPane.getTabs().addAll(tab1, tab2, tab3);
 
+        // Configure and display the main window
         Scene scene = new Scene(tabPane, 1100, 680);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
+    /**
+     * Builds the Daily Occupancy Panel.
+     * Allows users to check room availability for a specific target date.
+     */
     private VBox buildOccupancyView() {
         VBox box = new VBox(15);
         box.setPadding(new Insets(15));
 
+        // Top control bar for date selection
         HBox controlBox = new HBox(10);
         controlBox.setAlignment(Pos.CENTER_LEFT);
         Label dateLabel = new Label("Target Verification Date:");
@@ -63,7 +79,10 @@ public class MainApp extends Application {
         Button checkButton = new Button("Refresh Status Map");
         controlBox.getChildren().addAll(dateLabel, datePicker, checkButton);
 
+        // List view to display the occupancy status of each room
         ListView<String> statusList = new ListView<>();
+        
+        // Logic to calculate and display room statuses based on the selected date
         Runnable refreshMap = () -> {
             statusList.getItems().clear();
             LocalDate targetDate = datePicker.getValue();
@@ -77,6 +96,7 @@ public class MainApp extends Application {
             }
         };
 
+        // Bind the refresh logic to the button and run it once on startup
         checkButton.setOnAction(e -> refreshMap.run());
         refreshMap.run();
 
@@ -84,16 +104,22 @@ public class MainApp extends Application {
         return box;
     }
 
+    /**
+     * Builds the Reservation Manager tab.
+     * Contains a form for creating/updating reservations and a table for viewing/managing them.
+     */
     private HBox buildReservationView() {
         HBox mainBox = new HBox(15);
         mainBox.setPadding(new Insets(15));
 
+        // Setup the left-side form for reservation details
         VBox formBox = new VBox(10);
         formBox.setPrefWidth(280);
 
         Label formTitle = new Label("Reservation Record Form");
         formTitle.setStyle("-font-weight: bold; -fx-font-size: 14px;");
 
+        // Form input fields
         TextField txtId = new TextField(); txtId.setPromptText("Booking ID (e.g., RES-001)");
         TextField txtRoomNum = new TextField(); txtRoomNum.setPromptText("Room Number");
         TextField txtName = new TextField(); txtName.setPromptText("Guest Name");
@@ -106,23 +132,26 @@ public class MainApp extends Application {
         TextArea txtNotes = new TextArea(); txtNotes.setPromptText("Special Notes");
         txtNotes.setPrefHeight(60);
 
+        // Action buttons for the form
         Button btnCreate = new Button("Add New (Create)");
         Button btnUpdate = new Button("Save Changes (Update)");
         Button btnDelete = new Button("Remove Entry (Delete)");
         btnCreate.setMaxWidth(Double.MAX_VALUE);
         btnUpdate.setMaxWidth(Double.MAX_VALUE);
         btnDelete.setMaxWidth(Double.MAX_VALUE);
-        btnDelete.setStyle("-fx-base: #e74c3c;");
+        btnDelete.setStyle("-fx-base: #e74c3c;"); // Red styling for delete button
 
         formBox.getChildren().addAll(formTitle, txtId, txtRoomNum, txtName, txtEmail, txtPhone, 
                                     new Label("Check-In:"), pickerIn, new Label("Check-Out:"), pickerOut, 
                                     new Label("Status:"), txtStatus, txtNotes, btnCreate, btnUpdate, btnDelete);
 
+        // Setup the right-side table to display reservations
         VBox tableBox = new VBox(10);
         HBox.setHgrow(tableBox, Priority.ALWAYS);
 
         TableView<Reservation> table = new TableView<>(observableReservations);
 
+        // Map table columns to Reservation object properties
         TableColumn<Reservation, String> colId = new TableColumn<>("ID");
         colId.setCellValueFactory(new PropertyValueFactory<>("id"));
         TableColumn<Reservation, String> colRoom = new TableColumn<>("Room");
@@ -140,11 +169,12 @@ public class MainApp extends Application {
 
         table.getColumns().addAll(colId, colRoom, colName, colIn, colOut, colCash, colStatus);
 
+        // Extra action buttons located under the table
         HBox actionRow = new HBox(10);
         Button btnCheckIn = new Button("Log Check-In");
         Button btnCheckOut = new Button("Log Check-Out");
         Button btnExport = new Button("Export to CSV");
-        btnExport.setStyle("-fx-base: #2ecc71;");
+        btnExport.setStyle("-fx-base: #2ecc71;"); // Green styling for export
         actionRow.getChildren().addAll(btnCheckIn, btnCheckOut, btnExport);
 
         tableBox.getChildren().addAll(table, actionRow);
@@ -164,7 +194,7 @@ public class MainApp extends Application {
             selectedReservationId = null;
         };
 
-        // CRUD READ: Selecting an item loads values back into inputs
+        // CRUD READ: Selecting an item loads values back into inputs for editing
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             if (newSel != null) {
                 selectedReservationId = newSel.getId();
@@ -197,6 +227,7 @@ public class MainApp extends Application {
                 return;
             }
 
+            // Attempt to create reservation and update UI if successful
             boolean ok = resService.createReservation(inputId, txtRoomNum.getText(), txtName.getText(),
                     txtEmail.getText(), inputPhone, pickerIn.getValue(), pickerOut.getValue(), txtNotes.getText());
             if (ok) {
@@ -226,6 +257,7 @@ public class MainApp extends Application {
                     return;
                 }
 
+                // Attempt to update and refresh UI
                 boolean ok = resService.updateReservation(selectedReservationId, txtRoomNum.getText(), txtName.getText(),
                         txtEmail.getText(), inputPhone, pickerIn.getValue(), pickerOut.getValue(), txtNotes.getText(), txtStatus.getText());
                 if (ok) {
@@ -247,6 +279,7 @@ public class MainApp extends Application {
             }
         });
 
+        // Process guest check-in logic
         btnCheckIn.setOnAction(e -> {
             Reservation sel = table.getSelectionModel().getSelectedItem();
             if (sel != null) {
@@ -257,6 +290,7 @@ public class MainApp extends Application {
             }
         });
 
+        // Process guest check-out logic
         btnCheckOut.setOnAction(e -> {
             Reservation sel = table.getSelectionModel().getSelectedItem();
             if (sel != null) {
@@ -267,20 +301,28 @@ public class MainApp extends Application {
             }
         });
 
+        // Trigger CSV export
         btnExport.setOnAction(e -> ExportService.exportReservationsToCSV(resService.getAllReservations()));
 
         return mainBox;
     }
 
+    /**
+     * Builds the Room Management tab.
+     * Contains a form and table for tracking the hotel's physical room inventory.
+     */
     private HBox buildRoomView() {
         HBox mainBox = new HBox(15);
         mainBox.setPadding(new Insets(15));
 
+        // Setup left-side form for room details
         VBox formBox = new VBox(10);
         formBox.setPrefWidth(250);
 
         Label title = new Label("Room Inventory Form");
         title.setStyle("-font-weight: bold;");
+        
+        // Form input fields
         TextField txtNum = new TextField(); txtNum.setPromptText("Room Number");
         TextField txtType = new TextField(); txtType.setPromptText("Type (single/double/suite)");
         TextField txtFloor = new TextField(); txtFloor.setPromptText("Floor");
@@ -289,6 +331,7 @@ public class MainApp extends Application {
         txtStatus.setText("available");
         TextField txtDesc = new TextField(); txtDesc.setPromptText("Room View Specs");
         
+        // Action buttons
         Button btnAdd = new Button("Add Room (Create)");
         Button btnUpdateRoom = new Button("Save Changes (Update)");
         Button btnDeleteRoom = new Button("Remove Room (Delete)");
@@ -299,9 +342,11 @@ public class MainApp extends Application {
 
         formBox.getChildren().addAll(title, txtNum, txtType, txtFloor, txtPrice, txtStatus, txtDesc, btnAdd, btnUpdateRoom, btnDeleteRoom);
 
+        // Setup right-side table to display rooms
         TableView<Room> table = new TableView<>(observableRooms);
         HBox.setHgrow(table, Priority.ALWAYS);
 
+        // Map columns to Room object properties
         TableColumn<Room, String> colNum = new TableColumn<>("Room #");
         colNum.setCellValueFactory(new PropertyValueFactory<>("roomNumber"));
         TableColumn<Room, String> colType = new TableColumn<>("Type");
@@ -318,7 +363,7 @@ public class MainApp extends Application {
         table.getColumns().addAll(colNum, colType, colFloor, colPrice, colStatus, colDesc);
         mainBox.getChildren().addAll(formBox, table);
 
-        // Helper to reset Room input fields cleanly
+        // Helper to reset Room input fields cleanly after an operation
         Runnable clearRoomFields = () -> {
             txtNum.clear();
             txtType.clear();
@@ -329,7 +374,7 @@ public class MainApp extends Application {
             selectedRoomNumber = null;
         };
 
-        // CRUD READ: Clicking a row loads data back into fields
+        // CRUD READ: Clicking a row loads data back into fields for editing
         table.getSelectionModel().selectedItemProperty().addListener((obs, oldSel, newSel) -> {
             if (newSel != null) {
                 selectedRoomNumber = newSel.getRoomNumber();
@@ -351,6 +396,7 @@ public class MainApp extends Application {
                 observableRooms.setAll(roomService.getAllRooms());
                 clearRoomFields.run();
             } catch (Exception ex) {
+                // Catches formatting errors (like typing letters in the price/floor fields)
                 new Alert(Alert.AlertType.ERROR, "Check numerical parameters fields.").showAndWait();
             }
         });
