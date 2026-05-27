@@ -1,0 +1,21 @@
+# Build output
+out-test/
+bin/
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local AI keys (BYOK stored in user home; never commit secrets)
+**/ai-settings.properties
+.env
